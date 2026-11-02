@@ -125,6 +125,26 @@
     transition:color .15s ease;
   }
   #helpBtn:hover{color:var(--text);text-decoration:underline;}
+  .status-right{
+    display:inline-flex;
+    align-items:center;
+    gap:14px;
+  }
+  #langBtn{
+    border:none;
+    background:var(--text);
+    color:#fff;
+    border-radius:4px;
+    padding:2px 5px;
+    font-family:'Inter',sans-serif;
+    font-size:10px;
+    font-weight:600;
+    line-height:1.3;
+    letter-spacing:.5px;
+    cursor:pointer;
+    transition:background .15s ease;
+  }
+  #langBtn:hover{background:var(--accent);}
 
   /* Help dialog */
   #help{
@@ -182,18 +202,28 @@
   .help-row{
     display:flex;
     align-items:center;
-    gap:12px;
-    padding:5px 0;
+    gap:8px;
+    padding:3px 0;
     border-bottom:1px solid var(--panel-2);
     break-inside:avoid;
   }
   .help-cyr{
-    width:20px;
-    text-align:center;
+    width:28px;
+    height:28px;
+    margin-left:-4px;
+    padding:0;
+    border:none;
+    border-radius:6px;
+    background:transparent;
+    color:var(--text);
     font-family:'Lora',Georgia,serif;
     font-size:20px;
-    line-height:1.2;
+    line-height:1;
+    cursor:pointer;
+    transition:background .12s ease;
   }
+  .help-cyr:hover{background:var(--panel-2);}
+  #help.caps .help-cyr{text-transform:uppercase;}
   .help-lat{display:flex;flex-wrap:wrap;gap:4px;}
   .help-tips{
     display:flex;
@@ -321,7 +351,10 @@
         <span class="dot"></span><span id="modeLabel">Cyrillic</span>
         <button id="escBtn" type="button" title="Toggle Cyrillic / Latin (Esc)">Esc</button>
       </span>
-      <button id="helpBtn" type="button">Help</button>
+      <span class="status-right">
+        <button id="langBtn" type="button" title="Switch language (RU / UA)">RU</button>
+        <button id="helpBtn" type="button">Help</button>
+      </span>
     </div>
   </div>
 
@@ -341,7 +374,7 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
         </button>
       </div>
-      <p class="help-lead">Type Latin letters and they turn into Cyrillic as you go. Capitals work too: <kbd>Zh</kbd> → Ж.</p>
+      <p class="help-lead">Type Latin letters and they turn into Cyrillic as you go. Capitals work too: <kbd>Zh</kbd> → Ж. Click a letter to insert it, hold <kbd>Shift</kbd> for a capital.</p>
       <div class="help-grid" id="helpGrid"></div>
       <div class="help-tips">
         <span><kbd>Esc</kbd> switch Cyrillic / Latin</span>
@@ -353,26 +386,46 @@
 
 <script>
   // [latin label, input alternatives, cyrillic]
-  const KEYS = [
-    ['A','a','а'],['B','b','б'],['V','v','в'],['G','g','г'],['D','d','д'],['E','e','е'],
-    ['Jo','jo,yo,ö','ё'],['Zh','zh','ж'],['Z','z','з'],['I','i','и'],['J','j','й'],
-    ['K','k','к'],['L','l','л'],['M','m','м'],['N','n','н'],['O','o','о'],['P','p','п'],
-    ['R','r','р'],['S','s','с'],['T','t','т'],['U','u','у'],['F','f','ф'],['H','h,x','х'],
-    ['C','c','ц'],['Ch','ch','ч'],['Sh','sh','ш'],['Shh','shh,w','щ'],['##','#,tvz','ъ'],
-    ['Y','y','ы'],['"',"',mjz",'ь'],['Je','je,ä','э'],['Ju','ju,yu,ü','ю'],['Ja','ja,ya,q','я']
-  ];
+  const LAYOUTS = {
+    ru: [
+      ['A','a','а'],['B','b','б'],['V','v','в'],['G','g','г'],['D','d','д'],['E','e','е'],
+      ['Jo','jo,yo,ö','ё'],['Zh','zh','ж'],['Z','z','з'],['I','i','и'],['J','j','й'],
+      ['K','k','к'],['L','l','л'],['M','m','м'],['N','n','н'],['O','o','о'],['P','p','п'],
+      ['R','r','р'],['S','s','с'],['T','t','т'],['U','u','у'],['F','f','ф'],['H','h,x','х'],
+      ['C','c','ц'],['Ch','ch','ч'],['Sh','sh','ш'],['Shh','shh,w','щ'],['##','#,tvz','ъ'],
+      ['Y','y','ы'],['"',"',mjz",'ь'],['Je','je,ä','э'],['Ju','ju,yu,ü','ю'],['Ja','ja,ya,q','я']
+    ],
+    ua: [
+      ['A','a','а'],['B','b','б'],['V','v','в'],['G','g','г'],["G'","g'",'ґ'],['D','d','д'],
+      ['E','e','е'],['Je','je,ye,ö','є'],['Zh','zh','ж'],['Z','z','з'],['Y','y','и'],['I','i','і'],
+      ["I'","i',ji",'ї'],['J','j','й'],['K','k','к'],['L','l','л'],['M','m','м'],['N','n','н'],
+      ['O','o','о'],['P','p','п'],['R','r','р'],['S','s','с'],['T','t','т'],['U','u','у'],
+      ['F','f','ф'],['H','h,x','х'],['C','c','ц'],['Ch','ch','ч'],['Sh','sh,w','ш'],
+      ['Shh','shh,q','щ'],['"',"'",'ь'],['`','`','’'],['Ju','ju,yu,ü','ю'],['Ja','ja,ya','я']
+    ]
+  };
+  const LANG_STORE = 'translit-lang';
+  let lang = 'ru';
+  try{
+    const saved = localStorage.getItem(LANG_STORE);
+    if (Object.hasOwn(LAYOUTS, saved)) lang = saved;
+  }catch(_){}
 
-  // Build translit map from the same data
-  const MAP = {};
-  for (const [, alts, cyr] of KEYS){
-    for (const seq of alts.split(',')) MAP[seq] = cyr;
+  // Build translit map for the active layout (rebuilt on language switch)
+  let KEYS, MAP, SEQ;
+  function buildMap(){
+    KEYS = LAYOUTS[lang];
+    MAP = {};
+    for (const [, alts, cyr] of KEYS){
+      for (const seq of alts.split(',')) MAP[seq] = cyr;
+    }
+    // Longest sequences first for greedy matching
+    SEQ = Object.keys(MAP).sort((a,b) => b.length - a.length);
   }
-  // Longest sequences first for greedy matching
-  const SEQ = Object.keys(MAP).sort((a,b) => b.length - a.length);
+  buildMap();
   const isUpper = c => c !== c.toLowerCase() && c === c.toUpperCase();
 
-  const MAXLEN = SEQ.reduce((m, k) => Math.max(m, k.length), 1);
-  const LETTER = /^[A-Za-z#'äöüÄÖÜ]$/;
+  const LETTER = /^[A-Za-z#'`äöüÄÖÜ]$/;
 
   // Greedy transliteration of a short string (used to preview the volatile run).
   function translit(text){
@@ -501,14 +554,51 @@
 
   // Help dialog — the table is built from KEYS so it always matches the map.
   const help = document.getElementById('help');
-  document.getElementById('helpGrid').innerHTML = KEYS.map(([, alts, cyr]) =>
-    '<div class="help-row"><span class="help-cyr">' + cyr + '</span><span class="help-lat">' +
-    alts.split(',').map(a => '<kbd>' + a + '</kbd>').join('') + '</span></div>'
-  ).join('');
+  const helpGrid = document.getElementById('helpGrid');
+  function renderHelp(){
+    document.getElementById('helpTitle').textContent =
+      (lang === 'ru' ? 'Russian' : 'Ukrainian') + ' transliteration';
+    helpGrid.innerHTML = KEYS.map(([, alts, cyr]) =>
+      '<div class="help-row"><button type="button" class="help-cyr">' + cyr + '</button><span class="help-lat">' +
+      alts.split(',').map(a => '<kbd>' + a + '</kbd>').join('') + '</span></div>'
+    ).join('');
+  }
   document.getElementById('helpBtn').addEventListener('click', () => help.showModal());
   document.getElementById('helpClose').addEventListener('click', () => help.close());
   help.addEventListener('click', e => { if (e.target === help) help.close(); });   // backdrop
   help.addEventListener('close', () => ta.focus());
+
+  // Clicking a letter inserts it at the caret; Shift inserts the capital.
+  helpGrid.addEventListener('mousedown', e => { if (e.target.closest('.help-cyr')) e.preventDefault(); });
+  helpGrid.addEventListener('click', e => {
+    const b = e.target.closest('.help-cyr');
+    if (!b) return;
+    const c = e.shiftKey ? b.textContent.toUpperCase() : b.textContent;
+    help.close();
+    flushVol();
+    ta.focus();
+    ta.setRangeText(c, ta.selectionStart, ta.selectionEnd, 'end');
+    persistCurrent();
+  });
+  // While Shift is held the table shows capitals.
+  const setCaps = on => help.classList.toggle('caps', on);
+  document.addEventListener('keydown', e => { if (e.key === 'Shift') setCaps(true); });
+  document.addEventListener('keyup', e => { if (e.key === 'Shift') setCaps(false); });
+  window.addEventListener('blur', () => setCaps(false));
+
+  // Language — RU / UA layout; the choice is remembered.
+  const langBtn = document.getElementById('langBtn');
+  function setLang(l){
+    flushVol();                         // settle any run typed under the old layout
+    lang = l;
+    buildMap();
+    langBtn.textContent = l.toUpperCase();
+    renderHelp();
+    try{ localStorage.setItem(LANG_STORE, l); }catch(_){}
+  }
+  langBtn.addEventListener('mousedown', e => e.preventDefault());   // keep caret in the textarea
+  langBtn.addEventListener('click', () => setLang(lang === 'ru' ? 'ua' : 'ru'));
+  setLang(lang);
 
   // Notes — persisted to localStorage as JSON.
   const STORE = 'translit-notes';
