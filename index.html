@@ -3,7 +3,19 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Cyrillic Translit</title>
+<title>Latin to Cyrillic Converter – Russian Transliteration | Translit.ee</title>
+<meta name="description" content="Free online Russian transliteration tool. Instantly convert Latin letters into Russian Cyrillic text. Simple, fast and easy to use. No registration required.">
+<link rel="canonical" href="https://translit.ee/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Translit.ee">
+<meta property="og:url" content="https://translit.ee/">
+<meta property="og:title" content="Latin to Cyrillic Converter – Russian Transliteration | Translit.ee">
+<meta property="og:description" content="Free online Russian transliteration tool. Instantly convert Latin letters into Russian Cyrillic text. Simple, fast and easy to use. No registration required.">
+<meta property="og:image" content="https://translit.ee/apple-touch-icon.png">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Latin to Cyrillic Converter – Russian Transliteration | Translit.ee">
+<meta name="twitter:description" content="Free online Russian transliteration tool. Instantly convert Latin letters into Russian Cyrillic text. Simple, fast and easy to use. No registration required.">
+<meta name="twitter:image" content="https://translit.ee/apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon.png">
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -85,7 +97,7 @@
     transition:background .15s ease;
   }
   body.cyr .dot{background:#9ad29a;}
-  .hint kbd{
+  #escBtn, #help kbd{
     background:var(--panel-2);
     border:1px solid var(--line);
     border-bottom-width:2px;
@@ -93,7 +105,108 @@
     padding:1px 6px;
     font-family:'Inter',sans-serif;
     font-size:11px;
+    font-weight:400;
     color:var(--text);
+  }
+  #escBtn{
+    cursor:pointer;
+    transition:background .15s ease;
+  }
+  #escBtn:hover{background:var(--line);}
+  #escBtn:active{border-bottom-width:1px;margin-top:1px;}
+  #helpBtn{
+    border:none;
+    background:none;
+    padding:0;
+    font:inherit;
+    color:var(--muted);
+    cursor:pointer;
+    text-underline-offset:3px;
+    transition:color .15s ease;
+  }
+  #helpBtn:hover{color:var(--text);text-decoration:underline;}
+
+  /* Help dialog */
+  #help{
+    border:none;
+    padding:0;
+    border-radius:14px;
+    background:var(--panel);
+    color:var(--text);
+    width:min(560px, calc(100vw - 32px));
+    max-height:calc(100vh - 48px);
+    overflow:auto;
+    box-shadow:0 24px 64px rgba(0,0,0,.16), 0 2px 8px rgba(0,0,0,.06);
+  }
+  #help::backdrop{background:rgba(20,20,22,.28);}
+  #help[open]{animation:help-in .16s ease-out;}
+  #help[open]::backdrop{animation:help-fade .16s ease-out;}
+  @keyframes help-in{from{opacity:0;transform:translateY(6px) scale(.98);}}
+  @keyframes help-fade{from{opacity:0;}}
+  .help-inner{padding:20px 24px 18px;}
+  .help-head{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin-bottom:6px;
+  }
+  .help-head h2{
+    margin:0;
+    font-size:15px;
+    font-weight:600;
+    outline:none;
+  }
+  #helpClose{
+    border:none;
+    background:transparent;
+    color:var(--faint);
+    cursor:pointer;
+    padding:4px;
+    margin-right:-6px;
+    border-radius:6px;
+    display:flex;
+    transition:background .12s ease, color .12s ease;
+  }
+  #helpClose:hover{background:var(--line);color:var(--text);}
+  #helpClose svg{display:block;width:18px;height:18px;}
+  .help-lead{
+    margin:0 0 16px;
+    font-size:13px;
+    line-height:1.5;
+    color:var(--muted);
+  }
+  .help-grid{
+    column-count:3;
+    column-gap:28px;
+  }
+  .help-row{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    padding:5px 0;
+    border-bottom:1px solid var(--panel-2);
+    break-inside:avoid;
+  }
+  .help-cyr{
+    width:20px;
+    text-align:center;
+    font-family:'Lora',Georgia,serif;
+    font-size:20px;
+    line-height:1.2;
+  }
+  .help-lat{display:flex;flex-wrap:wrap;gap:4px;}
+  .help-tips{
+    display:flex;
+    flex-wrap:wrap;
+    gap:6px 20px;
+    margin-top:18px;
+    padding-top:14px;
+    border-top:1px solid var(--line);
+    font-size:12px;
+    color:var(--muted);
+  }
+  @media (max-width:520px){
+    .help-grid{column-count:2;}
   }
 
   /* Notes sidebar */
@@ -204,8 +317,11 @@
     </div>
 
     <div class="status">
-      <span class="mode"><span class="dot"></span><span id="modeLabel">Cyrillic</span></span>
-      <span class="hint">Press <kbd>Esc</kbd> to toggle Cyrillic / Latin</span>
+      <span class="mode">
+        <span class="dot"></span><span id="modeLabel">Cyrillic</span>
+        <button id="escBtn" type="button" title="Toggle Cyrillic / Latin (Esc)">Esc</button>
+      </span>
+      <button id="helpBtn" type="button">Help</button>
     </div>
   </div>
 
@@ -216,6 +332,24 @@
     </div>
     <div class="note-list" id="noteList"></div>
   </aside>
+
+  <dialog id="help" aria-labelledby="helpTitle">
+    <div class="help-inner">
+      <div class="help-head">
+        <h2 id="helpTitle" tabindex="-1" autofocus>Transliteration</h2>
+        <button id="helpClose" type="button" title="Close">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <p class="help-lead">Type Latin letters and they turn into Cyrillic as you go. Capitals work too: <kbd>Zh</kbd> → Ж.</p>
+      <div class="help-grid" id="helpGrid"></div>
+      <div class="help-tips">
+        <span><kbd>Esc</kbd> switch Cyrillic / Latin</span>
+        <span>Select text to copy it</span>
+        <span>Double-click to copy all</span>
+      </div>
+    </div>
+  </dialog>
 
 <script>
   // [latin label, input alternatives, cyrillic]
@@ -356,9 +490,25 @@
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape'){
       e.preventDefault();
-      setMode(!cyrMode);
+      if (help.open) help.close();      // Esc closes help instead of toggling
+      else setMode(!cyrMode);
     }
   });
+
+  const escBtn = document.getElementById('escBtn');
+  escBtn.addEventListener('mousedown', e => e.preventDefault());   // keep caret in the textarea
+  escBtn.addEventListener('click', () => setMode(!cyrMode));
+
+  // Help dialog — the table is built from KEYS so it always matches the map.
+  const help = document.getElementById('help');
+  document.getElementById('helpGrid').innerHTML = KEYS.map(([, alts, cyr]) =>
+    '<div class="help-row"><span class="help-cyr">' + cyr + '</span><span class="help-lat">' +
+    alts.split(',').map(a => '<kbd>' + a + '</kbd>').join('') + '</span></div>'
+  ).join('');
+  document.getElementById('helpBtn').addEventListener('click', () => help.showModal());
+  document.getElementById('helpClose').addEventListener('click', () => help.close());
+  help.addEventListener('click', e => { if (e.target === help) help.close(); });   // backdrop
+  help.addEventListener('close', () => ta.focus());
 
   // Notes — persisted to localStorage as JSON.
   const STORE = 'translit-notes';
