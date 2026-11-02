@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cyrillic Translit</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Lora:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#f4f4f5;
+    --panel:#fafafa;
+    --panel-2:#ececee;
+    --line:#dcdce0;
+    --text:#1f1f22;
+    --muted:#6e6e73;
+    --faint:#a0a0a5;
+    --accent:#3a3a3d;
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;margin:0;}
+  body{
+    font-family:'Inter',system-ui,sans-serif;
+    background:var(--bg);
+    color:var(--text);
+    display:flex;
+    flex-direction:row;
+    height:100vh;
+    overflow:hidden;
+  }
+  .main{
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    min-width:0;
+  }
+
+  /* Editor */
+  .editor-wrap{
+    flex:1;
+    display:flex;
+    min-height:0;
+    padding:16px;
+  }
+  textarea{
+    flex:1;
+    width:100%;
+    resize:none;
+    border:none;
+    border-radius:12px;
+    background:var(--panel);
+    color:var(--text);
+    font-family:'Lora',Georgia,'Times New Roman',serif;
+    font-size:20px;
+    line-height:1.6;
+    padding:22px 24px;
+    outline:none;
+  }
+  textarea::placeholder{color:var(--faint);}
+
+  /* Status bar */
+  .status{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:8px 18px;
+    border-top:1px solid var(--line);
+    background:var(--panel);
+    font-size:12px;
+    color:var(--muted);
+  }
+  .mode{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    font-weight:600;
+    letter-spacing:.3px;
+  }
+  .dot{
+    width:8px;height:8px;border-radius:50%;
+    background:var(--faint);
+    transition:background .15s ease;
+  }
+  body.cyr .dot{background:#9ad29a;}
+  .hint kbd{
+    background:var(--panel-2);
+    border:1px solid var(--line);
+    border-bottom-width:2px;
+    border-radius:5px;
+    padding:1px 6px;
+    font-family:'Inter',sans-serif;
+    font-size:11px;
+    color:var(--text);
+  }
+
+  /* Notes sidebar */
+  .sidebar{
+    width:20%;
+    min-width:200px;
+    display:flex;
+    flex-direction:column;
+    border-left:1px solid var(--line);
+    background:var(--bg);
+  }
+  .sidebar-head{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:12px 14px;
+    border-bottom:1px solid var(--line);
+  }
+  .sidebar-head h2{
+    margin:0;
+    font-size:12px;
+    font-weight:600;
+    letter-spacing:.4px;
+    text-transform:uppercase;
+    color:var(--muted);
+  }
+  #newNote{
+    border:none;
+    background:var(--panel-2);
+    color:var(--text);
+    width:26px;height:26px;
+    border-radius:7px;
+    font-size:18px;
+    line-height:1;
+    cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+    transition:background .15s ease;
+  }
+  #newNote:hover{background:var(--line);}
+  .note-list{
+    flex:1;
+    overflow-y:auto;
+    padding:8px;
+  }
+  .note-item{
+    display:flex;
+    align-items:flex-start;
+    gap:6px;
+    padding:10px 12px;
+    border-radius:8px;
+    cursor:pointer;
+    margin-bottom:2px;
+    transition:background .12s ease;
+  }
+  .note-item:hover{background:var(--panel-2);}
+  .note-item.active{background:var(--panel-2);}
+  .note-body{flex:1;min-width:0;}
+  .note-del{
+    flex-shrink:0;
+    align-self:center;
+    border:none;
+    background:transparent;
+    color:var(--faint);
+    cursor:pointer;
+    padding:4px;
+    border-radius:6px;
+    opacity:0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    transition:opacity .12s ease, background .12s ease, color .12s ease;
+  }
+  .note-item:hover .note-del{opacity:1;}
+  .note-del:hover{background:var(--line);color:var(--text);}
+  .note-del svg{display:block;width:20px;height:20px;}
+  .note-title{
+    font-size:14px;
+    font-weight:600;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    color:var(--text);
+  }
+  .note-date{
+    font-size:11px;
+    color:var(--faint);
+    margin:2px 0;
+  }
+  .note-snippet{
+    font-size:12px;
+    color:var(--muted);
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .note-empty{
+    padding:16px 12px;
+    font-size:12px;
+    color:var(--faint);
+    text-align:center;
+  }
+</style>
+</head>
+<body class="cyr">
+  <div class="main">
+    <div class="editor-wrap">
+      <textarea id="ta" autofocus spellcheck="false"></textarea>
+    </div>
+
+    <div class="status">
+      <span class="mode"><span class="dot"></span><span id="modeLabel">Cyrillic</span></span>
+      <span class="hint">Press <kbd>Esc</kbd> to toggle Cyrillic / Latin</span>
+    </div>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-head">
+      <h2>Notes</h2>
+      <button id="newNote" title="New note">+</button>
+    </div>
+    <div class="note-list" id="noteList"></div>
+  </aside>
+
+<script>
+  // [latin label, input alternatives, cyrillic]
+  const KEYS = [
+    ['A','a','а'],['B','b','б'],['V','v','в'],['G','g','г'],['D','d','д'],['E','e','е'],
+    ['Jo','jo,yo,ö','ё'],['Zh','zh','ж'],['Z','z','з'],['I','i','и'],['J','j','й'],
+    ['K','k','к'],['L','l','л'],['M','m','м'],['N','n','н'],['O','o','о'],['P','p','п'],
+    ['R','r','р'],['S','s','с'],['T','t','т'],['U','u','у'],['F','f','ф'],['H','h,x','х'],
+    ['C','c','ц'],['Ch','ch','ч'],['Sh','sh','ш'],['Shh','shh,w','щ'],['##','#,tvz','ъ'],
+    ['Y','y','ы'],['"',"',mjz",'ь'],['Je','je,ä','э'],['Ju','ju,yu,ü','ю'],['Ja','ja,ya,q','я']
+  ];
+
+  // Build translit map from the same data
+  const MAP = {};
+  for (const [, alts, cyr] of KEYS){
+    for (const seq of alts.split(',')) MAP[seq] = cyr;
+  }
+  // Longest sequences first for greedy matching
+  const SEQ = Object.keys(MAP).sort((a,b) => b.length - a.length);
+  const isUpper = c => c !== c.toLowerCase() && c === c.toUpperCase();
+
+  const MAXLEN = SEQ.reduce((m, k) => Math.max(m, k.length), 1);
+  const LETTER = /^[A-Za-z#'äöüÄÖÜ]$/;
+
+  // Greedy transliteration of a short string (used to preview the volatile run).
+  function translit(text){
+    let out = '', i = 0;
+    while (i < text.length){
+      const low = text.slice(i).toLowerCase();
+      let k = null;
+      for (const key of SEQ){ if (low.startsWith(key)){ k = key; break; } }
+      if (k){
+        let c = MAP[k];
+        if (isUpper(text[i])) c = c.toUpperCase();
+        out += c; i += k.length;
+      } else { out += text[i]; i++; }
+    }
+    return out;
+  }
+  // Could `s` still grow into a longer sequence?
+  function canExtend(s){
+    const low = s.toLowerCase();
+    return SEQ.some(k => k.length > low.length && k.startsWith(low));
+  }
+
+  // Editor — the textarea holds the real, final characters. Only the few latin
+  // letters currently being typed live in `vol` (a volatile run shown
+  // transliterated); once they can't grow into a longer sequence they're baked
+  // into the document as real characters and forgotten. Everything else —
+  // caret, selection, delete, undo — is native.
+  const ta = document.getElementById('ta');
+  const modeLabel = document.getElementById('modeLabel');
+  let cyrMode = true;
+  let vol = '';          // latin letters of the in-progress run
+  let volStart = 0;      // where the run begins in the textarea
+  let volOut = '';       // its current rendered form (what's shown)
+
+  function flushVol(){ vol = ''; volOut = ''; }   // settle the run as-is
+
+  ta.addEventListener('beforeinput', e => {
+    const s = ta.selectionStart, en = ta.selectionEnd;
+    // If the caret left the run (click/arrow) or there's a selection, settle it.
+    if (vol && (s !== en || s !== volStart + volOut.length)) flushVol();
+
+    // Only single latin letters in Cyrillic mode feed the run; everything else
+    // (delete, space, punctuation, paste, Latin mode) is handled natively.
+    if (!(cyrMode && e.inputType === 'insertText' && e.data && LETTER.test(e.data))){
+      flushVol();
+      return;
+    }
+    e.preventDefault();
+    if (en !== s) ta.setRangeText('', s, en, 'end');   // replace selection
+    if (!vol) volStart = ta.selectionStart;
+
+    vol += e.data;
+    // Bake any leading part that can no longer grow; keep the rest volatile.
+    let commit = '';
+    while (vol && !canExtend(vol)){
+      const low = vol.toLowerCase();
+      let k = null;
+      for (const key of SEQ){ if (low.startsWith(key)){ k = key; break; } }
+      if (k){
+        let c = MAP[k];
+        if (isUpper(vol[0])) c = c.toUpperCase();
+        commit += c; vol = vol.slice(k.length);
+      } else { commit += vol[0]; vol = vol.slice(1); }
+    }
+    const newOut = translit(vol);
+    ta.setRangeText(commit + newOut, volStart, volStart + volOut.length, 'end');
+    volStart += commit.length;
+    volOut = newOut;
+    persistCurrent();   // setRangeText doesn't fire `input`, so save explicitly
+  });
+
+  // Auto-copy whatever is selected.
+  let lastCopied = '';
+  function copySelection(){
+    const sel = ta.value.slice(ta.selectionStart, ta.selectionEnd);
+    if (!sel || sel === lastCopied) return;
+    lastCopied = sel;
+    if (navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(sel).then(flashCopied).catch(execCopy);
+    } else {
+      execCopy();
+    }
+  }
+  function execCopy(){
+    try { if (document.execCommand('copy')) flashCopied(); } catch (_){}
+  }
+  function flashCopied(){
+    modeLabel.dataset.prev = modeLabel.dataset.prev || modeLabel.textContent;
+    modeLabel.textContent = 'Copied';
+    clearTimeout(flashCopied._t);
+    flashCopied._t = setTimeout(() => {
+      modeLabel.textContent = modeLabel.dataset.prev;
+      delete modeLabel.dataset.prev;
+    }, 900);
+  }
+  document.addEventListener('selectionchange', () => {
+    if (document.activeElement === ta) copySelection();
+  });
+
+  // Double-click selects all and copies.
+  ta.addEventListener('dblclick', e => {
+    e.preventDefault();
+    ta.select();
+    copySelection();
+  });
+
+  function setMode(on){
+    flushVol();                         // settle any in-progress run
+    cyrMode = on;                       // only affects text typed from now on
+    document.body.classList.toggle('cyr', on);
+    modeLabel.textContent = on ? 'Cyrillic' : 'Latin';
+    ta.focus();
+  }
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape'){
+      e.preventDefault();
+      setMode(!cyrMode);
+    }
+  });
+
+  // Notes — persisted to localStorage as JSON.
+  const STORE = 'translit-notes';
+  const noteListEl = document.getElementById('noteList');
+  let notes = [];
+  let currentId = null;
+
+  const blankNote = () => ({
+    id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+    body: '',
+    updated: Date.now()
+  });
+  const current = () => notes.find(n => n.id === currentId);
+
+  function loadNotes(){
+    try{
+      const data = JSON.parse(localStorage.getItem(STORE));
+      if (data && Array.isArray(data.notes)){ notes = data.notes; currentId = data.currentId; }
+    }catch(_){}
+    if (!notes.length){ const n = blankNote(); notes.push(n); currentId = n.id; }
+    if (!notes.some(n => n.id === currentId)) currentId = notes[0].id;
+  }
+  function saveNotes(){
+    localStorage.setItem(STORE, JSON.stringify({ notes, currentId }));
+  }
+
+  function previewOf(body){
+    const t = body.replace(/^\s+/, '');
+    const nl = t.indexOf('\n');
+    const title = (nl === -1 ? t : t.slice(0, nl)).trim() || 'New Note';
+    const rest = (nl === -1 ? '' : t.slice(nl + 1)).replace(/\s+/g, ' ').trim();
+    return { title, snippet: rest || 'No additional text' };
+  }
+  function fmtDate(ts){
+    const d = new Date(ts);
+    return d.toDateString() === new Date().toDateString()
+      ? d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      : d.toLocaleDateString([], { month: 'short', day: 'numeric' });
+  }
+
+  function renderList(){
+    noteListEl.innerHTML = '';
+    [...notes].sort((a, b) => b.updated - a.updated).forEach(n => {
+      const { title, snippet } = previewOf(n.body);
+      const item = document.createElement('div');
+      item.className = 'note-item' + (n.id === currentId ? ' active' : '');
+      item.innerHTML =
+        '<div class="note-body">' +
+          '<div class="note-title"></div><div class="note-date"></div><div class="note-snippet"></div>' +
+        '</div>' +
+        '<button class="note-del" title="Delete note" aria-label="Delete note">' +
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+            '<polyline points="3 6 5 6 21 6"></polyline>' +
+            '<path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path>' +
+            '<path d="M10 11v6M14 11v6"></path>' +
+            '<path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path>' +
+          '</svg>' +
+        '</button>';
+      item.querySelector('.note-title').textContent = title;
+      item.querySelector('.note-date').textContent = fmtDate(n.updated);
+      item.querySelector('.note-snippet').textContent = snippet;
+      item.querySelector('.note-body').addEventListener('click', () => selectNote(n.id));
+      item.querySelector('.note-del').addEventListener('click', e => {
+        e.stopPropagation();
+        deleteNote(n.id);
+      });
+      noteListEl.appendChild(item);
+    });
+  }
+
+  function selectNote(id){
+    if (id === currentId) return;
+    flushVol();
+    currentId = id;
+    ta.value = current().body;
+    saveNotes();
+    renderList();
+    ta.focus();
+  }
+  function newNote(){
+    flushVol();
+    const n = blankNote();
+    notes.push(n);
+    currentId = n.id;
+    ta.value = '';
+    saveNotes();
+    renderList();
+    ta.focus();
+  }
+  function deleteNote(id){
+    flushVol();
+    notes = notes.filter(n => n.id !== id);
+    if (!notes.length){ const n = blankNote(); notes.push(n); currentId = n.id; }
+    if (!notes.some(n => n.id === currentId)){
+      currentId = [...notes].sort((a, b) => b.updated - a.updated)[0].id;
+    }
+    ta.value = current().body;
+    saveNotes();
+    renderList();
+    ta.focus();
+  }
+  document.getElementById('newNote').addEventListener('click', newNote);
+
+  // Write the textarea's current contents into the active note and persist.
+  function persistCurrent(){
+    const n = current();
+    if (!n) return;
+    n.body = ta.value;
+    n.updated = Date.now();
+    saveNotes();
+    renderList();
+  }
+  // Native edits (space, punctuation, delete, paste) fire `input`. Transliterated
+  // letters go through setRangeText in `beforeinput`, which does NOT fire `input`,
+  // so those are persisted explicitly there via persistCurrent().
+  ta.addEventListener('input', persistCurrent);
+
+  loadNotes();
+  ta.value = current().body;
+  renderList();
+  ta.focus();
+</script>
+</body>
+</html>
