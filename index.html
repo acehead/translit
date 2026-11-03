@@ -239,6 +239,35 @@
     .help-grid{column-count:2;}
   }
 
+  /* Context menu */
+  #ctxMenu{
+    position:fixed;
+    z-index:10;
+    min-width:160px;
+    padding:4px;
+    border:1px solid var(--line);
+    border-radius:10px;
+    background:var(--panel);
+    box-shadow:0 12px 32px rgba(0,0,0,.14), 0 2px 6px rgba(0,0,0,.06);
+    animation:help-fade .1s ease-out;
+  }
+  #ctxMenu button{
+    display:block;
+    width:100%;
+    border:none;
+    border-radius:6px;
+    background:transparent;
+    color:var(--text);
+    padding:6px 10px;
+    font-family:'Inter',sans-serif;
+    font-size:13px;
+    text-align:left;
+    cursor:pointer;
+  }
+  #ctxMenu button:hover:not(:disabled){background:var(--panel-2);}
+  #ctxMenu button:disabled{color:var(--faint);cursor:default;}
+  .ctx-sep{height:1px;margin:4px 6px;background:var(--line);}
+
   /* Notes sidebar */
   .sidebar{
     width:20%;
@@ -378,11 +407,17 @@
       <div class="help-grid" id="helpGrid"></div>
       <div class="help-tips">
         <span><kbd>Esc</kbd> switch Cyrillic / Latin</span>
-        <span>Select text to copy it</span>
-        <span>Double-click to copy all</span>
+        <span>Right-click to copy or convert the selection, or the whole note</span>
       </div>
     </div>
   </dialog>
+
+  <div id="ctxMenu" role="menu" hidden>
+    <button type="button" role="menuitem" data-act="copy">Copy</button>
+    <div class="ctx-sep"></div>
+    <button type="button" role="menuitem" data-act="cyr">To Cyrillic</button>
+    <button type="button" role="menuitem" data-act="lat">To Latin</button>
+  </div>
 
 <script>
   // [latin label, input alternatives, cyrillic]
@@ -412,12 +447,14 @@
   }catch(_){}
 
   // Build translit map for the active layout (rebuilt on language switch)
-  let KEYS, MAP, SEQ;
+  let KEYS, MAP, SEQ, REV;
   function buildMap(){
     KEYS = LAYOUTS[lang];
     MAP = {};
+    REV = {};
     for (const [, alts, cyr] of KEYS){
       for (const seq of alts.split(',')) MAP[seq] = cyr;
+      REV[cyr] = alts.split(',')[0];    // To Latin uses the primary spelling
     }
     // Longest sequences first for greedy matching
     SEQ = Object.keys(MAP).sort((a,b) => b.length - a.length);
@@ -442,6 +479,18 @@
     }
     return out;
   }
+  // Cyrillic back to Latin. Runs of capitals stay all-caps: Жук → Zhuk, ЖУК → ZHUK.
+  function toLatin(text){
+    let out = '';
+    for (let i = 0; i < text.length; i++){
+      const c = text[i], lat = REV[c.toLowerCase()];
+      if (lat === undefined){ out += c; continue; }
+      if (!isUpper(c)) out += lat;
+      else if (isUpper(text[i-1] || '') || isUpper(text[i+1] || '')) out += lat.toUpperCase();
+      else out += lat[0].toUpperCase() + lat.slice(1);
+    }
+    return out;
+  }
   // Could `s` still grow into a longer sequence?
   function canExtend(s){
     const low = s.toLowerCase();
@@ -459,10 +508,12 @@
   let vol = '';          // latin letters of the in-progress run
   let volStart = 0;      // where the run begins in the textarea
   let volOut = '';       // its current rendered form (what's shown)
+  let replacing = false; // a context-menu conversion is being inserted
 
   function flushVol(){ vol = ''; volOut = ''; }   // settle the run as-is
 
   ta.addEventListener('beforeinput', e => {
+    if (replacing) return;              // menu conversion — insert as-is
     const s = ta.selectionStart, en = ta.selectionEnd;
     // If the caret left the run (click/arrow) or there's a selection, settle it.
     if (vol && (s !== en || s !== volStart + volOut.length)) flushVol();
@@ -497,20 +548,77 @@
     persistCurrent();   // setRangeText doesn't fire `input`, so save explicitly
   });
 
-  // Auto-copy whatever is selected.
-  let lastCopied = '';
-  function copySelection(){
-    const sel = ta.value.slice(ta.selectionStart, ta.selectionEnd);
-    if (!sel || sel === lastCopied) return;
-    lastCopied = sel;
+  // Context menu — acts on the selection, or on the whole note when nothing is selected.
+  const ctxMenu = document.getElementById('ctxMenu');
+  let menuRange = [0, 0], menuHasSel = false;
+  let rightDownSel = null;
+
+  // Right-click shouldn't move the caret, and macOS selects the word under the
+  // pointer before `contextmenu` fires — so remember the selection and restore it.
+  ta.addEventListener('mousedown', e => {
+    if (e.button !== 2) return;
+    e.preventDefault();
+    rightDownSel = [ta.selectionStart, ta.selectionEnd];
+  });
+  ta.addEventListener('contextmenu', e => {
+    e.preventDefault();
+    ta.focus();
+    if (rightDownSel){ ta.setSelectionRange(...rightDownSel); rightDownSel = null; }
+    flushVol();
+    const s = ta.selectionStart, en = ta.selectionEnd;
+    menuHasSel = s !== en;
+    menuRange = menuHasSel ? [s, en] : [0, ta.value.length];
+    for (const b of ctxMenu.querySelectorAll('button')) b.disabled = menuRange[0] === menuRange[1];
+    showMenu(e.clientX, e.clientY);
+  });
+
+  function showMenu(x, y){
+    ctxMenu.hidden = false;
+    const r = ctxMenu.getBoundingClientRect();
+    ctxMenu.style.left = Math.max(4, Math.min(x, innerWidth - r.width - 4)) + 'px';
+    ctxMenu.style.top = Math.max(4, Math.min(y, innerHeight - r.height - 4)) + 'px';
+  }
+  function hideMenu(){ ctxMenu.hidden = true; }
+  document.addEventListener('mousedown', e => { if (!ctxMenu.contains(e.target)) hideMenu(); });
+  ta.addEventListener('scroll', hideMenu);
+  window.addEventListener('resize', hideMenu);
+  window.addEventListener('blur', hideMenu);
+
+  ctxMenu.addEventListener('mousedown', e => e.preventDefault());   // keep focus in the textarea
+  ctxMenu.addEventListener('contextmenu', e => e.preventDefault());
+  ctxMenu.addEventListener('click', e => {
+    const b = e.target.closest('button');
+    if (!b) return;
+    hideMenu();
+    const [s, en] = menuRange;
+    if (b.dataset.act === 'copy') copyRange(s, en);
+    else replaceRange(s, en, (b.dataset.act === 'cyr' ? translit : toLatin)(ta.value.slice(s, en)));
+  });
+
+  // Replace via insertText so the conversion can be undone with Cmd/Ctrl+Z.
+  function replaceRange(s, en, text){
+    if (text === ta.value.slice(s, en)) return;
+    ta.setSelectionRange(s, en);
+    replacing = true;
+    const ok = document.execCommand('insertText', false, text);   // fires `input` → persisted
+    replacing = false;
+    if (!ok){ ta.setRangeText(text, s, en, 'end'); persistCurrent(); }
+    if (menuHasSel) ta.setSelectionRange(s, s + text.length);
+  }
+
+  function copyRange(s, en){
+    const text = ta.value.slice(s, en);
     if (navigator.clipboard && navigator.clipboard.writeText){
-      navigator.clipboard.writeText(sel).then(flashCopied).catch(execCopy);
+      navigator.clipboard.writeText(text).then(flashCopied).catch(() => execCopy(s, en));
     } else {
-      execCopy();
+      execCopy(s, en);
     }
   }
-  function execCopy(){
+  function execCopy(s, en){
+    const prev = [ta.selectionStart, ta.selectionEnd];
+    ta.setSelectionRange(s, en);
     try { if (document.execCommand('copy')) flashCopied(); } catch (_){}
+    ta.setSelectionRange(...prev);
   }
   function flashCopied(){
     modeLabel.dataset.prev = modeLabel.dataset.prev || modeLabel.textContent;
@@ -521,16 +629,6 @@
       delete modeLabel.dataset.prev;
     }, 900);
   }
-  document.addEventListener('selectionchange', () => {
-    if (document.activeElement === ta) copySelection();
-  });
-
-  // Double-click selects all and copies.
-  ta.addEventListener('dblclick', e => {
-    e.preventDefault();
-    ta.select();
-    copySelection();
-  });
 
   function setMode(on){
     flushVol();                         // settle any in-progress run
@@ -543,9 +641,10 @@
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape'){
       e.preventDefault();
-      if (help.open) help.close();      // Esc closes help instead of toggling
+      if (help.open) help.close();      // Esc closes help / the menu instead of toggling
+      else if (!ctxMenu.hidden) hideMenu();
       else setMode(!cyrMode);
-    }
+    } else hideMenu();                  // typing dismisses the menu
   });
 
   const escBtn = document.getElementById('escBtn');
