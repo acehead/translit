@@ -1,25 +1,27 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Latin to Cyrillic Converter – Russian Transliteration | Translit.ee</title>
-<meta name="description" content="Free online Russian transliteration tool. Instantly convert Latin letters into Russian Cyrillic text. Simple, fast and easy to use. No registration required.">
+<title>Latin to Cyrillic Converter – Russian Transliteration</title>
+<meta name="description" content="Free online Russian and Ukrainian transliteration. Type Latin letters and get Cyrillic instantly, with no registration. Your notes save automatically.">
 <link rel="canonical" href="https://translit.ee/">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Translit.ee">
 <meta property="og:url" content="https://translit.ee/">
-<meta property="og:title" content="Latin to Cyrillic Converter – Russian Transliteration | Translit.ee">
-<meta property="og:description" content="Free online Russian transliteration tool. Instantly convert Latin letters into Russian Cyrillic text. Simple, fast and easy to use. No registration required.">
+<meta property="og:title" content="Latin to Cyrillic Converter – Russian Transliteration">
+<meta property="og:description" content="Free online Russian and Ukrainian transliteration. Type Latin letters and get Cyrillic instantly, with no registration. Your notes save automatically.">
 <meta property="og:image" content="https://translit.ee/icons/apple-touch-icon.png">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="Latin to Cyrillic Converter – Russian Transliteration | Translit.ee">
-<meta name="twitter:description" content="Free online Russian transliteration tool. Instantly convert Latin letters into Russian Cyrillic text. Simple, fast and easy to use. No registration required.">
+<meta name="twitter:title" content="Latin to Cyrillic Converter – Russian Transliteration">
+<meta name="twitter:description" content="Free online Russian and Ukrainian transliteration. Type Latin letters and get Cyrillic instantly, with no registration. Your notes save automatically.">
 <meta name="twitter:image" content="https://translit.ee/icons/apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
 <link rel="icon" type="image/png" sizes="64x64" href="icons/favicon-64.png">
 <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
 <link rel="manifest" href="manifest.webmanifest">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#f4f4f5">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Lora:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
@@ -33,6 +35,18 @@
     --muted:#6e6e73;
     --faint:#a0a0a5;
     --accent:#3a3a3d;
+    color-scheme:light;
+  }
+  :root[data-theme="dark"]{
+    --bg:#161618;
+    --panel:#1e1e21;
+    --panel-2:#2a2a2e;
+    --line:#323236;
+    --text:#e6e6e8;
+    --muted:#9a9aa0;
+    --faint:#66666c;
+    --accent:#c4c4c8;
+    color-scheme:dark;
   }
   *{box-sizing:border-box;}
   html,body{height:100%;margin:0;}
@@ -116,26 +130,28 @@
   }
   #escBtn:hover{background:var(--line);}
   #escBtn:active{border-bottom-width:1px;margin-top:1px;}
-  #helpBtn{
+  .icon-btn{
     border:none;
     background:none;
     padding:0;
-    font:inherit;
     color:var(--muted);
     cursor:pointer;
-    text-underline-offset:3px;
+    display:flex;
     transition:color .15s ease;
   }
-  #helpBtn:hover{color:var(--text);text-decoration:underline;}
+  .icon-btn:hover{color:var(--text);}
+  .icon-btn svg{display:block;width:16px;height:16px;}
+  /* The theme button shows the theme it switches to */
+  :root[data-theme="dark"] #themeBtn .moon,
+  :root:not([data-theme="dark"]) #themeBtn .sun{display:none;}
   .status-right{
     display:inline-flex;
     align-items:center;
     gap:14px;
   }
-  #langBtn{
-    border:none;
+  #langBtn, .lang-code{
     background:var(--text);
-    color:#fff;
+    color:var(--panel);
     border-radius:4px;
     padding:2px 5px;
     font-family:'Inter',sans-serif;
@@ -143,42 +159,45 @@
     font-weight:600;
     line-height:1.3;
     letter-spacing:.5px;
+  }
+  #langBtn{
+    border:none;
     cursor:pointer;
     transition:background .15s ease;
   }
   #langBtn:hover{background:var(--accent);}
 
-  /* Help dialog */
-  #help{
+  /* Dialogs */
+  dialog{
     border:none;
     padding:0;
     border-radius:14px;
     background:var(--panel);
     color:var(--text);
-    width:min(560px, calc(100vw - 32px));
     max-height:calc(100vh - 48px);
     overflow:auto;
     box-shadow:0 24px 64px rgba(0,0,0,.16), 0 2px 8px rgba(0,0,0,.06);
   }
-  #help::backdrop{background:rgba(20,20,22,.28);}
-  #help[open]{animation:help-in .16s ease-out;}
-  #help[open]::backdrop{animation:help-fade .16s ease-out;}
-  @keyframes help-in{from{opacity:0;transform:translateY(6px) scale(.98);}}
-  @keyframes help-fade{from{opacity:0;}}
-  .help-inner{padding:20px 24px 18px;}
-  .help-head{
+  dialog::backdrop{background:rgba(20,20,22,.28);}
+  :root[data-theme="dark"] dialog::backdrop{background:rgba(0,0,0,.5);}
+  dialog[open]{animation:dlg-in .16s ease-out;}
+  dialog[open]::backdrop{animation:fade-in .16s ease-out;}
+  @keyframes dlg-in{from{opacity:0;transform:translateY(6px) scale(.98);}}
+  @keyframes fade-in{from{opacity:0;}}
+  .dlg-inner{padding:20px 24px 18px;}
+  .dlg-head{
     display:flex;
     align-items:center;
     justify-content:space-between;
     margin-bottom:6px;
   }
-  .help-head h2{
+  .dlg-head h2{
     margin:0;
     font-size:15px;
     font-weight:600;
     outline:none;
   }
-  #helpClose{
+  .dlg-close{
     border:none;
     background:transparent;
     color:var(--faint);
@@ -189,8 +208,35 @@
     display:flex;
     transition:background .12s ease, color .12s ease;
   }
-  #helpClose:hover{background:var(--line);color:var(--text);}
-  #helpClose svg{display:block;width:18px;height:18px;}
+  .dlg-close:hover{background:var(--line);color:var(--text);}
+  .dlg-close svg{display:block;width:18px;height:18px;}
+
+  /* Language dialog */
+  #langDlg{width:min(320px, calc(100vw - 32px));}
+  .lang-list{margin:10px -12px 0;}
+  .lang-opt{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    width:100%;
+    padding:9px 12px;
+    margin-bottom:2px;
+    border:none;
+    border-radius:8px;
+    background:transparent;
+    color:var(--text);
+    font-family:'Inter',sans-serif;
+    font-size:14px;
+    text-align:left;
+    cursor:pointer;
+    transition:background .12s ease;
+  }
+  .lang-opt:hover, .lang-opt[aria-current="true"]{background:var(--panel-2);}
+  .lang-code{min-width:26px;text-align:center;}
+  .lang-opt svg{width:16px;height:16px;margin-left:auto;color:var(--muted);}
+
+  /* Help dialog */
+  #help{width:min(560px, calc(100vw - 32px));}
   .help-lead{
     margin:0 0 16px;
     font-size:13px;
@@ -251,7 +297,7 @@
     border-radius:10px;
     background:var(--panel);
     box-shadow:0 12px 32px rgba(0,0,0,.14), 0 2px 6px rgba(0,0,0,.06);
-    animation:help-fade .1s ease-out;
+    animation:fade-in .1s ease-out;
   }
   #ctxMenu button{
     display:block;
@@ -370,6 +416,12 @@
     text-align:center;
   }
 </style>
+<script>
+  // Set the theme before first paint: the saved choice, else the system setting.
+  document.documentElement.dataset.theme = (() => {
+    try{ return localStorage.getItem('translit-theme'); }catch(_){}
+  })() || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+</script>
 </head>
 <body class="cyr">
   <div class="main">
@@ -379,46 +431,64 @@
 
     <div class="status">
       <span class="mode">
-        <span class="dot"></span><span id="modeLabel">Cyrillic</span>
-        <button id="escBtn" type="button" title="Toggle Cyrillic / Latin (Esc)">Esc</button>
+        <span class="dot"></span><span id="modeLabel">Вкл.</span>
+        <button id="escBtn" type="button" data-i18n-title="toggle" title="Включить / выключить транслит (Esc)">Esc</button>
       </span>
       <span class="status-right">
-        <button id="langBtn" type="button" title="Switch language (RU / UA)">RU</button>
-        <button id="helpBtn" type="button">Help</button>
+        <button id="langBtn" type="button" aria-haspopup="dialog" data-i18n-title="language" title="Язык">RU</button>
+        <button id="helpBtn" class="icon-btn" type="button" data-i18n-title="help" title="Справка">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3M12 17h.01"/></svg>
+        </button>
+        <button id="themeBtn" class="icon-btn" type="button" aria-pressed="false" data-i18n-title="darkTheme" title="Тёмная тема">
+          <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+          <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+        </button>
       </span>
     </div>
   </div>
 
   <aside class="sidebar">
     <div class="sidebar-head">
-      <h2>Notes</h2>
-      <button id="newNote" title="New note">+</button>
+      <h2 data-i18n="notes">Заметки</h2>
+      <button id="newNote" data-i18n-title="newNote" title="Новая заметка">+</button>
     </div>
     <div class="note-list" id="noteList"></div>
   </aside>
 
   <dialog id="help" aria-labelledby="helpTitle">
-    <div class="help-inner">
-      <div class="help-head">
-        <h2 id="helpTitle" tabindex="-1" autofocus>Transliteration</h2>
-        <button id="helpClose" type="button" title="Close">
+    <div class="dlg-inner" data-nosnippet>
+      <div class="dlg-head">
+        <h2 id="helpTitle" tabindex="-1" autofocus data-i18n="helpTitle">Транслитерация</h2>
+        <button class="dlg-close" type="button" data-i18n-title="close" title="Закрыть">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
         </button>
       </div>
-      <p class="help-lead">Type Latin letters and they turn into Cyrillic as you go. Capitals work too: <kbd>Zh</kbd> → Ж. Click a letter to insert it, hold <kbd>Shift</kbd> for a capital.</p>
+      <p class="help-lead" data-i18n="helpLead">Пишите латиницей — буквы сразу превращаются в кириллицу. Заглавные тоже работают: <kbd>Zh</kbd> → Ж. Нажмите на букву, чтобы вставить её, с <kbd>Shift</kbd> — заглавную.</p>
       <div class="help-grid" id="helpGrid"></div>
       <div class="help-tips">
-        <span><kbd>Esc</kbd> switch Cyrillic / Latin</span>
-        <span>Right-click to copy or convert the selection, or the whole note</span>
+        <span data-i18n="tipEsc"><kbd>Esc</kbd> включить / выключить транслит</span>
+        <span data-i18n="tipMenu">Правый клик: копировать или преобразовать выделенный текст либо всю заметку</span>
       </div>
     </div>
   </dialog>
 
+  <dialog id="langDlg" aria-labelledby="langTitle">
+    <div class="dlg-inner">
+      <div class="dlg-head">
+        <h2 id="langTitle" tabindex="-1" autofocus data-i18n="language">Язык</h2>
+        <button class="dlg-close" type="button" data-i18n-title="close" title="Закрыть">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div class="lang-list" id="langList"></div>
+    </div>
+  </dialog>
+
   <div id="ctxMenu" role="menu" hidden>
-    <button type="button" role="menuitem" data-act="copy">Copy</button>
+    <button type="button" role="menuitem" data-act="copy" data-i18n="copy">Копировать</button>
     <div class="ctx-sep"></div>
-    <button type="button" role="menuitem" data-act="cyr">To Cyrillic</button>
-    <button type="button" role="menuitem" data-act="lat">To Latin</button>
+    <button type="button" role="menuitem" data-act="cyr" data-i18n="toCyr">В кириллицу</button>
+    <button type="button" role="menuitem" data-act="lat" data-i18n="toLat">В латиницу</button>
   </div>
 
 <script>
@@ -439,14 +509,94 @@
       ['O','o','о'],['P','p','п'],['R','r','р'],['S','s','с'],['T','t','т'],['U','u','у'],
       ['F','f','ф'],['H','h,x','х'],['C','c','ц'],['Ch','ch','ч'],['Sh','sh,w','ш'],
       ['Shh','shh,q','щ'],['"',"'",'ь'],['`','`','’'],['Ju','ju,yu,ü','ю'],['Ja','ja,ya','я']
+    ],
+    by: [
+      ['A','a','а'],['B','b','б'],['V','v','в'],['G','g','г'],['D','d','д'],['E','e','е'],
+      ['Jo','jo,yo,ö','ё'],['Zh','zh','ж'],['Z','z','з'],['I','i','і'],['J','j','й'],
+      ['K','k','к'],['L','l','л'],['M','m','м'],['N','n','н'],['O','o','о'],['P','p','п'],
+      ['R','r','р'],['S','s','с'],['T','t','т'],['U','u','у'],['W','w','ў'],['F','f','ф'],
+      ['H','h,x','х'],['C','c','ц'],['Ch','ch','ч'],['Sh','sh','ш'],['Y','y','ы'],
+      ['"',"'",'ь'],['Je','je,ä','э'],['Ju','ju,yu,ü','ю'],['Ja','ja,ya,q','я'],['`','`','’']
+    ],
+    bg: [
+      ['A','a','а'],['B','b','б'],['V','v','в'],['G','g','г'],['D','d','д'],['E','e','е'],
+      ['Zh','zh','ж'],['Z','z','з'],['I','i','и'],['J','j','й'],['K','k','к'],['L','l','л'],
+      ['M','m','м'],['N','n','н'],['O','o','о'],['P','p','п'],['R','r','р'],['S','s','с'],
+      ['T','t','т'],['U','u','у'],['F','f','ф'],['H','h,x','х'],['C','c','ц'],['Ch','ch','ч'],
+      ['Sh','sh','ш'],['Sht','sht,shh,w','щ'],['Y','y','ъ'],['"',"'",'ь'],['Ju','ju,yu,ü','ю'],
+      ['Ja','ja,ya,q','я']
     ]
   };
+
+  // UI strings per language. The static HTML carries the Russian ones as defaults.
+  const I18N = {
+    ru: {
+      name: 'Русский', htmlLang: 'ru',
+      on: 'Вкл.', off: 'Выкл.', copied: 'Скопировано',
+      toggle: 'Включить / выключить транслит (Esc)',
+      language: 'Язык', help: 'Справка', close: 'Закрыть', darkTheme: 'Тёмная тема',
+      helpTitle: 'Транслитерация',
+      helpLead: 'Пишите латиницей — буквы сразу превращаются в кириллицу. Заглавные тоже работают: <kbd>Zh</kbd> → Ж. Нажмите на букву, чтобы вставить её, с <kbd>Shift</kbd> — заглавную.',
+      tipEsc: '<kbd>Esc</kbd> включить / выключить транслит',
+      tipMenu: 'Правый клик: копировать или преобразовать выделенный текст либо всю заметку',
+      copy: 'Копировать', toCyr: 'В кириллицу', toLat: 'В латиницу',
+      notes: 'Заметки', newNote: 'Новая заметка', noText: 'Нет дополнительного текста',
+      deleteNote: 'Удалить заметку'
+    },
+    ua: {
+      name: 'Українська', htmlLang: 'uk',
+      on: 'Увімк.', off: 'Вимк.', copied: 'Скопійовано',
+      toggle: 'Увімкнути / вимкнути трансліт (Esc)',
+      language: 'Мова', help: 'Довідка', close: 'Закрити', darkTheme: 'Темна тема',
+      helpTitle: 'Транслітерація',
+      helpLead: 'Пишіть латиницею — літери одразу перетворюються на кирилицю. Великі теж працюють: <kbd>Zh</kbd> → Ж. Натисніть на літеру, щоб вставити її, із <kbd>Shift</kbd> — велику.',
+      tipEsc: '<kbd>Esc</kbd> увімкнути / вимкнути трансліт',
+      tipMenu: 'Правий клік: копіювати або перетворити виділений текст чи всю нотатку',
+      copy: 'Копіювати', toCyr: 'На кирилицю', toLat: 'На латиницю',
+      notes: 'Нотатки', newNote: 'Нова нотатка', noText: 'Немає додаткового тексту',
+      deleteNote: 'Видалити нотатку'
+    },
+    by: {
+      name: 'Беларуская', htmlLang: 'be',
+      on: 'Укл.', off: 'Выкл.', copied: 'Скапіявана',
+      toggle: 'Уключыць / выключыць трансліт (Esc)',
+      language: 'Мова', help: 'Даведка', close: 'Закрыць', darkTheme: 'Цёмная тэма',
+      helpTitle: 'Транслітарацыя',
+      helpLead: 'Пішыце лацініцай — літары адразу ператвараюцца ў кірыліцу. Вялікія таксама працуюць: <kbd>Zh</kbd> → Ж. Націсніце на літару, каб уставіць яе, з <kbd>Shift</kbd> — вялікую.',
+      tipEsc: '<kbd>Esc</kbd> уключыць / выключыць трансліт',
+      tipMenu: 'Правы клік: капіяваць або пераўтварыць вылучаны тэкст ці ўсю нататку',
+      copy: 'Капіяваць', toCyr: 'У кірыліцу', toLat: 'У лацініцу',
+      notes: 'Нататкі', newNote: 'Новая нататка', noText: 'Няма дадатковага тэксту',
+      deleteNote: 'Выдаліць нататку'
+    },
+    bg: {
+      name: 'Български', htmlLang: 'bg',
+      on: 'Вкл.', off: 'Изкл.', copied: 'Копирано',
+      toggle: 'Включване / изключване на транслитерацията (Esc)',
+      language: 'Език', help: 'Помощ', close: 'Затвори', darkTheme: 'Тъмна тема',
+      helpTitle: 'Транслитерация',
+      helpLead: 'Пишете на латиница — буквите веднага се превръщат в кирилица. Главните също работят: <kbd>Zh</kbd> → Ж. Щракнете върху буква, за да я вмъкнете, а с <kbd>Shift</kbd> — главна.',
+      tipEsc: '<kbd>Esc</kbd> включване / изключване на транслитерацията',
+      tipMenu: 'Десен бутон: копиране или преобразуване на избрания текст или на цялата бележка',
+      copy: 'Копиране', toCyr: 'Към кирилица', toLat: 'Към латиница',
+      notes: 'Бележки', newNote: 'Нова бележка', noText: 'Няма допълнителен текст',
+      deleteNote: 'Изтриване на бележката'
+    }
+  };
+
+  // ?lang=ua picks the language, else the last choice, else Russian.
   const LANG_STORE = 'translit-lang';
-  let lang = 'ru';
-  try{
-    const saved = localStorage.getItem(LANG_STORE);
-    if (Object.hasOwn(LAYOUTS, saved)) lang = saved;
-  }catch(_){}
+  const isLang = l => Object.hasOwn(LAYOUTS, l);
+  const urlLang = () => new URLSearchParams(location.search).get('lang')?.toLowerCase();
+  let lang = urlLang();
+  if (!isLang(lang)){
+    lang = 'ru';
+    try{
+      const saved = localStorage.getItem(LANG_STORE);
+      if (isLang(saved)) lang = saved;
+    }catch(_){}
+  }
+  let T = I18N[lang];
 
   // Build translit map for the active layout (rebuilt on language switch)
   let KEYS, MAP, SEQ, REV;
@@ -623,31 +773,36 @@
     ta.setSelectionRange(...prev);
   }
   function flashCopied(){
-    modeLabel.dataset.prev = modeLabel.dataset.prev || modeLabel.textContent;
-    modeLabel.textContent = 'Copied';
+    modeLabel.textContent = T.copied;
     clearTimeout(flashCopied._t);
-    flashCopied._t = setTimeout(() => {
-      modeLabel.textContent = modeLabel.dataset.prev;
-      delete modeLabel.dataset.prev;
-    }, 900);
+    flashCopied._t = setTimeout(renderMode, 900);
   }
 
+  const renderMode = () => { modeLabel.textContent = cyrMode ? T.on : T.off; };
   function setMode(on){
     flushVol();                         // settle any in-progress run
     cyrMode = on;                       // only affects text typed from now on
     document.body.classList.toggle('cyr', on);
-    modeLabel.textContent = on ? 'Cyrillic' : 'Latin';
+    renderMode();
     ta.focus();
   }
 
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape'){
       e.preventDefault();
-      if (help.open) help.close();      // Esc closes help / the menu instead of toggling
+      const dlg = document.querySelector('dialog[open]');
+      if (dlg) dlg.close();             // Esc closes a dialog / the menu instead of toggling
       else if (!ctxMenu.hidden) hideMenu();
       else setMode(!cyrMode);
     } else hideMenu();                  // typing dismisses the menu
   });
+
+  // Dialogs close on × or a backdrop click, then hand focus back to the editor.
+  for (const dlg of document.querySelectorAll('dialog')){
+    dlg.querySelector('.dlg-close').addEventListener('click', () => dlg.close());
+    dlg.addEventListener('click', e => { if (e.target === dlg) dlg.close(); });   // backdrop
+    dlg.addEventListener('close', () => ta.focus());
+  }
 
   const escBtn = document.getElementById('escBtn');
   escBtn.addEventListener('mousedown', e => e.preventDefault());   // keep caret in the textarea
@@ -657,17 +812,12 @@
   const help = document.getElementById('help');
   const helpGrid = document.getElementById('helpGrid');
   function renderHelp(){
-    document.getElementById('helpTitle').textContent =
-      (lang === 'ru' ? 'Russian' : 'Ukrainian') + ' transliteration';
     helpGrid.innerHTML = KEYS.map(([, alts, cyr]) =>
       '<div class="help-row"><button type="button" class="help-cyr">' + cyr + '</button><span class="help-lat">' +
       alts.split(',').map(a => '<kbd>' + a + '</kbd>').join('') + '</span></div>'
     ).join('');
   }
   document.getElementById('helpBtn').addEventListener('click', () => help.showModal());
-  document.getElementById('helpClose').addEventListener('click', () => help.close());
-  help.addEventListener('click', e => { if (e.target === help) help.close(); });   // backdrop
-  help.addEventListener('close', () => ta.focus());
 
   // Clicking a letter inserts it at the caret; Shift inserts the capital.
   helpGrid.addEventListener('mousedown', e => { if (e.target.closest('.help-cyr')) e.preventDefault(); });
@@ -687,19 +837,76 @@
   document.addEventListener('keyup', e => { if (e.key === 'Shift') setCaps(false); });
   window.addEventListener('blur', () => setCaps(false));
 
-  // Language — RU / UA layout; the choice is remembered.
+  // Language — sets both the layout and the UI language. The choice is remembered
+  // and shown in the address bar as ?lang=<code>.
   const langBtn = document.getElementById('langBtn');
+  const langDlg = document.getElementById('langDlg');
+  const langList = document.getElementById('langList');
   function setLang(l){
     flushVol();                         // settle any run typed under the old layout
     lang = l;
+    T = I18N[l];
     buildMap();
+    document.documentElement.lang = T.htmlLang;
+    for (const el of document.querySelectorAll('[data-i18n]')) el.innerHTML = T[el.dataset.i18n];
+    for (const el of document.querySelectorAll('[data-i18n-title]')) el.title = T[el.dataset.i18nTitle];
     langBtn.textContent = l.toUpperCase();
+    renderMode();
     renderHelp();
+    renderLangs();
+    renderList();                       // note placeholders and dates are localized too
     try{ localStorage.setItem(LANG_STORE, l); }catch(_){}
   }
+  function renderLangs(){
+    langList.innerHTML = Object.keys(LAYOUTS).map(l =>
+      '<button type="button" class="lang-opt" data-lang="' + l + '" aria-current="' + (l === lang) + '">' +
+        '<span class="lang-code">' + l.toUpperCase() + '</span><span>' + I18N[l].name + '</span>' +
+        (l === lang ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>' : '') +
+      '</button>'
+    ).join('');
+  }
   langBtn.addEventListener('mousedown', e => e.preventDefault());   // keep caret in the textarea
-  langBtn.addEventListener('click', () => setLang(lang === 'ru' ? 'ua' : 'ru'));
-  setLang(lang);
+  langBtn.addEventListener('click', () => langDlg.showModal());
+  langList.addEventListener('click', e => {
+    const b = e.target.closest('.lang-opt');
+    if (!b) return;
+    langDlg.close();
+    if (b.dataset.lang === lang) return;
+    setLang(b.dataset.lang);
+    try{ history.pushState({ lang }, '', '?lang=' + lang); }catch(_){}
+  });
+  window.addEventListener('popstate', e => {
+    const l = e.state?.lang ?? urlLang();
+    if (isLang(l) && l !== lang) setLang(l);
+  });
+
+  // Theme — follows the system until picked with the button; the pick is remembered.
+  // Picking the system's own theme forgets it, so the page follows the system again.
+  const THEME_STORE = 'translit-theme';
+  const themeBtn = document.getElementById('themeBtn');
+  const themeMeta = document.querySelector('meta[name="theme-color"]');
+  const systemDark = matchMedia('(prefers-color-scheme: dark)');
+  const systemTheme = () => systemDark.matches ? 'dark' : 'light';
+  function setTheme(t){
+    document.documentElement.dataset.theme = t;
+    themeBtn.setAttribute('aria-pressed', t === 'dark');
+    themeMeta.content = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim();
+  }
+  themeBtn.addEventListener('mousedown', e => e.preventDefault());   // keep caret in the textarea
+  themeBtn.addEventListener('click', () => {
+    const t = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+    setTheme(t);
+    try{
+      if (t === systemTheme()) localStorage.removeItem(THEME_STORE);
+      else localStorage.setItem(THEME_STORE, t);
+    }catch(_){}
+  });
+  systemDark.addEventListener('change', () => {
+    let saved = null;
+    try{ saved = localStorage.getItem(THEME_STORE); }catch(_){}
+    if (!saved) setTheme(systemTheme());
+  });
+  setTheme(document.documentElement.dataset.theme);   // sync the button with what the head script chose
 
   // Notes — persisted to localStorage as JSON.
   const STORE = 'translit-notes';
@@ -729,15 +936,15 @@
   function previewOf(body){
     const t = body.replace(/^\s+/, '');
     const nl = t.indexOf('\n');
-    const title = (nl === -1 ? t : t.slice(0, nl)).trim() || 'New Note';
+    const title = (nl === -1 ? t : t.slice(0, nl)).trim() || T.newNote;
     const rest = (nl === -1 ? '' : t.slice(nl + 1)).replace(/\s+/g, ' ').trim();
-    return { title, snippet: rest || 'No additional text' };
+    return { title, snippet: rest || T.noText };
   }
   function fmtDate(ts){
     const d = new Date(ts);
     return d.toDateString() === new Date().toDateString()
-      ? d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-      : d.toLocaleDateString([], { month: 'short', day: 'numeric' });
+      ? d.toLocaleTimeString(T.htmlLang, { hour: '2-digit', minute: '2-digit' })
+      : d.toLocaleDateString(T.htmlLang, { month: 'short', day: 'numeric' });
   }
 
   function renderList(){
@@ -750,7 +957,7 @@
         '<div class="note-body">' +
           '<div class="note-title"></div><div class="note-date"></div><div class="note-snippet"></div>' +
         '</div>' +
-        '<button class="note-del" title="Delete note" aria-label="Delete note">' +
+        '<button class="note-del" title="' + T.deleteNote + '" aria-label="' + T.deleteNote + '">' +
           '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
             '<polyline points="3 6 5 6 21 6"></polyline>' +
             '<path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path>' +
@@ -819,7 +1026,8 @@
 
   loadNotes();
   ta.value = current().body;
-  renderList();
+  setLang(lang);                        // applies the UI strings and renders the note list
+  try{ history.replaceState({ lang }, ''); }catch(_){}   // lets Back/Forward restore the language
   ta.focus();
 </script>
 </body>
